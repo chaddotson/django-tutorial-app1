@@ -2,43 +2,70 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.template import RequestContext, loader
 from django.core.urlresolvers import reverse
+from django.views import generic
+from django.utils import timezone
+
 from models import Choice, Poll
 
 from models import Poll
 # Create your views here.
 
-def index(request):
-    #return HttpResponse("Hello, world.  You're at the poll index.")
-    latest_poll_list = Poll.objects.order_by('-pub_date')[:5]
-    #output = ', '.join([p.question for p in latest_poll_list])
-    #return HttpResponse(output)
-    template = loader.get_template('polls/index.html')
-    #context = RequestContext(request, {
-    #    'latest_poll_list': latest_poll_list,
-    #})
-    #
-    #return HttpResponse(template.render(context))
 
-    context = {'latest_poll_list': latest_poll_list}
-    return render(request, 'polls/index.html', context)
+class IndexView(generic.ListView):
+    template_name = 'polls/index.html'
+    context_object_name = 'latest_poll_list'
+
+    def get_queryset(self):
+        return Poll.objects.filter(pub_date__lte=timezone.now()).order_by('-pub_date')[:5]
 
 
-def detail(request, poll_id):
-    #return HttpResponse("You're looking at poll %s." % poll_id)
-    #try:
-    #    poll = Poll.objects.get(pk=poll_id)
-    #
-    #except Poll.DoesNotExist:
-    #    raise Http404
+class DetailView(generic.DetailView):
+    model = Poll
+    template_name = 'polls/detail.html'
 
-    poll = get_object_or_404(Poll, pk=poll_id)
-    return render(request, 'polls/detail.html', {'poll': poll})
+    def get_queryset(self):
+        """
+        Excludes any polls that aren't published yet.
+        """
+        return Poll.objects.filter(pub_date__lte=timezone.now())
 
 
-def results(request, poll_id):
-    #return HttpResponse("You're looking at the results of poll %s." % poll_id)
-    poll = get_object_or_404(Poll, pk=poll_id)
-    return render(request, 'polls/results.html', {'poll': poll})
+class ResultsView(generic.DetailView):
+    model = Poll
+    template_name = 'polls/results.html'
+
+#def index(request):
+#    #return HttpResponse("Hello, world.  You're at the poll index.")
+#    latest_poll_list = Poll.objects.order_by('-pub_date')[:5]
+#    #output = ', '.join([p.question for p in latest_poll_list])
+#    #return HttpResponse(output)
+#    template = loader.get_template('polls/index.html')
+#    #context = RequestContext(request, {
+#    #    'latest_poll_list': latest_poll_list,
+#    #})
+#    #
+#    #return HttpResponse(template.render(context))
+#
+#    context = {'latest_poll_list': latest_poll_list}
+#    return render(request, 'polls/index.html', context)
+#
+#
+#def detail(request, poll_id):
+#    #return HttpResponse("You're looking at poll %s." % poll_id)
+#    #try:
+#    #    poll = Poll.objects.get(pk=poll_id)
+#    #
+#    #except Poll.DoesNotExist:
+#    #    raise Http404
+#
+#    poll = get_object_or_404(Poll, pk=poll_id)
+#    return render(request, 'polls/detail.html', {'poll': poll})
+#
+#
+#def results(request, poll_id):
+#    #return HttpResponse("You're looking at the results of poll %s." % poll_id)
+#    poll = get_object_or_404(Poll, pk=poll_id)
+#    return render(request, 'polls/results.html', {'poll': poll})
 
 
 def vote(request, poll_id):
